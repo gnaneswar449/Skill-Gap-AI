@@ -12,6 +12,8 @@ import {
   RotateCcw,
   Sliders,
   Code2,
+  Banknote,
+  TrendingUp,
   Briefcase,
   Layers,
   Building2,
@@ -22,8 +24,8 @@ import {
 } from 'lucide-react';
 import { CareerGuidanceOutput, CandidateSkill, SkillProficiency } from './data/promptSpec';
 import { generateTailoredCareerGuidance } from './utils/fallbackAnalyzer';
+import { getEstimatedSalaryBenchmark } from './utils/salaryBenchmark';
 import { ResultsDashboard } from './components/ResultsDashboard';
-import { PromptDrawerModal } from './components/PromptDrawerModal';
 
 const COMPANY_TIERS = [
   { id: 'Product-Based MNC', label: 'Product-Based MNC', desc: 'High algorithmic rigor, concurrency & system design (e.g. Google, Microsoft, Amazon)' },
@@ -90,9 +92,6 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [auditResult, setAuditResult] = useState<CareerGuidanceOutput | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Modal for Developer Prompt Specification
-  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
 
   // Add / Remove / Update Skills with Proficiency
   const handleAddSkill = (skillName: string, proficiency: SkillProficiency = selectedProficiencyForNew) => {
@@ -200,6 +199,7 @@ export default function App() {
   };
 
   const effectiveTier = customTierInput.trim() || targetTier;
+  const salaryBenchmark = getEstimatedSalaryBenchmark(targetRole, experienceLevel, effectiveTier);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
@@ -226,14 +226,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsPromptModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <Code2 className="w-3.5 h-3.5 text-blue-600" />
-              <span className="hidden sm:inline">AI Studio</span> Prompt Spec
-            </button>
-
             {auditResult && (
               <button
                 onClick={handleReset}
@@ -393,6 +385,48 @@ export default function App() {
                       {role.split('(')[0].trim()}
                     </button>
                   ))}
+                </div>
+
+                {/* Localized Tech Industry Salary Benchmark Card */}
+                <div className="mt-3 bg-gradient-to-r from-emerald-50/90 via-teal-50/40 to-slate-50 border border-emerald-200 rounded-xl p-3.5 shadow-2xs space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-md bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                        <Banknote className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                        Estimated Market Salary Benchmark
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        {salaryBenchmark.demandStatus}
+                      </span>
+                    </div>
+
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      Calibrated for <strong className="text-slate-800">{effectiveTier}</strong> • {experienceLevel}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-baseline gap-3 pt-0.5">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-lg font-black text-emerald-900 tracking-tight">
+                        {salaryBenchmark.inrRange}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-500">
+                        ({salaryBenchmark.usdRange})
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[11px] text-slate-600 border-l border-emerald-200 pl-3">
+                      <span>Median: <strong className="text-slate-800">{salaryBenchmark.medianInr}</strong></span>
+                      <span>•</span>
+                      <span>Top 25%: <strong className="text-slate-800">{salaryBenchmark.percentile75}</strong></span>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-600 leading-snug">
+                    <strong className="text-emerald-950 font-semibold">Key Compensation Driver:</strong> {salaryBenchmark.keyCompensationDriver}
+                  </p>
                 </div>
               </div>
 
@@ -621,11 +655,6 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Google AI Studio Prompt Spec Drawer Modal */}
-      <PromptDrawerModal
-        isOpen={isPromptModalOpen}
-        onClose={() => setIsPromptModalOpen(false)}
-      />
     </div>
   );
 }

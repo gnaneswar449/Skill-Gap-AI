@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { CareerGuidanceOutput, CandidateSkill } from '../data/promptSpec';
+import { getEstimatedSalaryBenchmark } from './salaryBenchmark';
 
 export interface PdfSectionToggles {
   includeExecutiveSummary?: boolean;
@@ -93,58 +94,70 @@ export function generateSkillGapPdf(options: PdfExportOptions): void {
 
   let y = 34;
 
+  const salaryBenchmark = getEstimatedSalaryBenchmark(targetRole, experienceLevel, targetTier);
+
   // --- CANDIDATE PROFILE SUMMARY BOX ---
   doc.setFillColor(248, 250, 252); // Slate 50
   doc.setDrawColor(226, 232, 240); // Slate 200
-  doc.roundedRect(margin, y, pageWidth - margin * 2, 29, 2, 2, 'FD');
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 34, 2, 2, 'FD');
 
   // Candidate Name
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
-  doc.text('CANDIDATE:', margin + 4, y + 6);
+  doc.text('CANDIDATE:', margin + 4, y + 5.5);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(15, 23, 42);
-  doc.text(candidateName || 'Candidate', margin + 26, y + 6);
+  doc.text(candidateName || 'Candidate', margin + 26, y + 5.5);
 
   // Target Role
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
-  doc.text('TARGET ROLE:', margin + 4, y + 11.5);
+  doc.text('TARGET ROLE:', margin + 4, y + 10.5);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(37, 99, 235); // Blue 600
-  doc.text(targetRole, margin + 28, y + 11.5);
+  doc.text(targetRole, margin + 28, y + 10.5);
 
   // Target Benchmark (Prominently displayed)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(71, 85, 105);
-  doc.text('TARGET BENCHMARK:', margin + 4, y + 17);
+  doc.text('TARGET BENCHMARK:', margin + 4, y + 15.5);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(16, 185, 129); // Emerald 600
-  doc.text(`${targetTier}  |  ${experienceLevel}`, margin + 38, y + 17);
+  doc.text(`${targetTier}  |  ${experienceLevel}`, margin + 38, y + 15.5);
+
+  // Market Salary Benchmark
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text('EST. MARKET SALARY:', margin + 4, y + 20.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(5, 150, 105); // Emerald 700
+  doc.text(`${salaryBenchmark.inrShort} (${salaryBenchmark.usdShort})  •  Median: ${salaryBenchmark.medianInr}`, margin + 40, y + 20.5);
 
   // Academic Background & Skills
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.2);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Academic Background: ${academicMajor || 'N/A'}`, margin + 4, y + 22);
+  doc.text(`Academic Background: ${academicMajor || 'N/A'}`, margin + 4, y + 25.5);
   
   const skillsDisplayStr = skillsWithProficiency && skillsWithProficiency.length > 0
     ? skillsWithProficiency.map(s => `${s.name} [${s.proficiency}]`).join(', ')
     : currentSkills;
   const currentSkillsTrunc = skillsDisplayStr.length > 76 ? skillsDisplayStr.substring(0, 73) + '...' : skillsDisplayStr;
-  doc.text(`Assessed Skills: ${currentSkillsTrunc || 'None listed'}`, margin + 4, y + 26.5);
+  doc.text(`Assessed Skills: ${currentSkillsTrunc || 'None listed'}`, margin + 4, y + 30);
 
   // Score Badge in Profile Box
   const scoreBoxWidth = 36;
   const scoreBoxX = pageWidth - margin - scoreBoxWidth - 3;
   doc.setFillColor(15, 23, 42);
-  doc.roundedRect(scoreBoxX, y + 3, scoreBoxWidth, 23, 2, 2, 'F');
+  doc.roundedRect(scoreBoxX, y + 3, scoreBoxWidth, 28, 2, 2, 'F');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
@@ -152,14 +165,14 @@ export function generateSkillGapPdf(options: PdfExportOptions): void {
   if (score >= 75) doc.setTextColor(52, 211, 153);
   else if (score >= 50) doc.setTextColor(251, 191, 36);
   else doc.setTextColor(248, 113, 113);
-  doc.text(`${score}%`, scoreBoxX + scoreBoxWidth / 2, y + 12, { align: 'center' });
+  doc.text(`${score}%`, scoreBoxX + scoreBoxWidth / 2, y + 14, { align: 'center' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.5);
   doc.setTextColor(255, 255, 255);
-  doc.text('READINESS SCORE', scoreBoxX + scoreBoxWidth / 2, y + 18, { align: 'center' });
+  doc.text('READINESS SCORE', scoreBoxX + scoreBoxWidth / 2, y + 21, { align: 'center' });
 
-  y += 32;
+  y += 37;
   let sectionCounter = 1;
 
   // --- SECTION: EXECUTIVE AUDIT SUMMARY (TOGGLEABLE) ---

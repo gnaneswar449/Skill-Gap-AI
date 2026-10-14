@@ -23,9 +23,11 @@ import {
   TrendingUp,
   Building2,
   Layers,
+  Banknote,
 } from 'lucide-react';
 import { CareerGuidanceOutput, SkillGapItem, CandidateSkill } from '../data/promptSpec';
 import { generateSkillGapPdf } from '../utils/pdfGenerator';
+import { getEstimatedSalaryBenchmark } from '../utils/salaryBenchmark';
 
 interface ResultsDashboardProps {
   data: CareerGuidanceOutput;
@@ -114,12 +116,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   };
 
   const activeSectionsCount = Object.values(pdfSections).filter(Boolean).length;
+  const salaryBenchmark = getEstimatedSalaryBenchmark(targetRole, experienceLevel, targetTier);
 
-  // Calculate dynamic simulated score safely
+  // Calculate dynamic simulated score
   const simulatedCount = Object.values(simulatedSkills).filter(Boolean).length;
-  const totalGapsCount = (data.skillGaps || []).length;
-  const potentialScoreBoost = totalGapsCount > 0 ? Math.round(((100 - (data.readinessScore || 0)) / totalGapsCount) * simulatedCount) : 0;
-  const dynamicScore = Math.min(100, (data.readinessScore || 50) + potentialScoreBoost);
+  const totalGapsCount = data.skillGaps.length;
+  const potentialScoreBoost = totalGapsCount > 0 ? Math.round(((100 - data.readinessScore) / totalGapsCount) * simulatedCount) : 0;
+  const dynamicScore = Math.min(100, data.readinessScore + potentialScoreBoost);
 
   // Score Styling (Light mode optimized)
   const getScoreStyle = (score: number) => {
@@ -130,14 +133,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   const scoreColor = getScoreStyle(dynamicScore);
 
-  // Filter skill gaps safely
-  const filteredGaps = (data.skillGaps || []).filter((gap) => {
+  // Filter skill gaps
+  const filteredGaps = data.skillGaps.filter((gap) => {
     if (priorityFilter === 'ALL') return true;
     return gap.priority === priorityFilter;
   });
 
-  // Calculate task completion progress safely
-  const totalChecklistItems = (data.roadmap || []).reduce((acc, week) => acc + (week.checklist || []).length, 0);
+  // Calculate task completion progress
+  const totalChecklistItems = data.roadmap.reduce((acc, week) => acc + week.checklist.length, 0);
   const completedChecklistItems = Object.values(checkedTasks).filter(Boolean).length;
   const progressPercent = totalChecklistItems > 0 ? Math.round((completedChecklistItems / totalChecklistItems) * 100) : 0;
 
@@ -199,6 +202,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </span>
               <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                 {experienceLevel}
+              </span>
+              <span className="text-xs font-bold px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
+                <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+                Est. Salary: {salaryBenchmark.inrShort} ({salaryBenchmark.usdShort})
               </span>
             </div>
             
@@ -465,6 +472,58 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           )}
         </div>
       )}
+
+      {/* Target Role Market Salary Benchmark Banner */}
+      <div className="bg-gradient-to-r from-emerald-50/90 via-teal-50/40 to-white border border-emerald-200/90 rounded-xl p-4 shadow-sm space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-emerald-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
+              <Banknote className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">
+                  Target Role Market Salary Benchmark
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  {salaryBenchmark.demandStatus}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500">
+                Localized 2025/2026 tech compensation for <strong>{targetTier}</strong> ({experienceLevel})
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-black text-emerald-900 tracking-tight">
+              {salaryBenchmark.inrRange}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">
+              ({salaryBenchmark.usdRange})
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
+          <div className="bg-white/80 border border-emerald-100 rounded-lg p-2.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Median Pay</span>
+            <span className="text-sm font-bold text-slate-900">{salaryBenchmark.medianInr} <span className="text-[11px] text-slate-500 font-normal">({salaryBenchmark.medianUsd})</span></span>
+          </div>
+          <div className="bg-white/80 border border-emerald-100 rounded-lg p-2.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">75th Percentile (Top Performer)</span>
+            <span className="text-sm font-bold text-emerald-800">{salaryBenchmark.percentile75}</span>
+          </div>
+          <div className="bg-white/80 border border-emerald-100 rounded-lg p-2.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">25th Percentile (Entry Baseline)</span>
+            <span className="text-sm font-bold text-slate-700">{salaryBenchmark.percentile25}</span>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-slate-600 pt-0.5">
+          <strong className="text-slate-800">Compensation Unlock Factor:</strong> {salaryBenchmark.keyCompensationDriver}. Closing the identified technical gaps positions your profile directly within the 75th percentile band.
+        </p>
+      </div>
 
       {/* Candidate Verified Skills with Proficiency Badges */}
       {skillsWithProficiency && skillsWithProficiency.length > 0 && (
