@@ -115,11 +115,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   const activeSectionsCount = Object.values(pdfSections).filter(Boolean).length;
 
-  // Calculate dynamic simulated score
+  // Calculate dynamic simulated score safely
   const simulatedCount = Object.values(simulatedSkills).filter(Boolean).length;
-  const totalGapsCount = data.skillGaps.length;
-  const potentialScoreBoost = totalGapsCount > 0 ? Math.round(((100 - data.readinessScore) / totalGapsCount) * simulatedCount) : 0;
-  const dynamicScore = Math.min(100, data.readinessScore + potentialScoreBoost);
+  const totalGapsCount = (data.skillGaps || []).length;
+  const potentialScoreBoost = totalGapsCount > 0 ? Math.round(((100 - (data.readinessScore || 0)) / totalGapsCount) * simulatedCount) : 0;
+  const dynamicScore = Math.min(100, (data.readinessScore || 50) + potentialScoreBoost);
 
   // Score Styling (Light mode optimized)
   const getScoreStyle = (score: number) => {
@@ -130,14 +130,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   const scoreColor = getScoreStyle(dynamicScore);
 
-  // Filter skill gaps
-  const filteredGaps = data.skillGaps.filter((gap) => {
+  // Filter skill gaps safely
+  const filteredGaps = (data.skillGaps || []).filter((gap) => {
     if (priorityFilter === 'ALL') return true;
     return gap.priority === priorityFilter;
   });
 
-  // Calculate task completion progress
-  const totalChecklistItems = data.roadmap.reduce((acc, week) => acc + week.checklist.length, 0);
+  // Calculate task completion progress safely
+  const totalChecklistItems = (data.roadmap || []).reduce((acc, week) => acc + (week.checklist || []).length, 0);
   const completedChecklistItems = Object.values(checkedTasks).filter(Boolean).length;
   const progressPercent = totalChecklistItems > 0 ? Math.round((completedChecklistItems / totalChecklistItems) * 100) : 0;
 
