@@ -1,0 +1,6 @@
+{
+  "name": "SkillGap AI Prompt Architect",
+  "description": "System prompt, dynamic template, and schema workbench for SkillGap AI: Dynamic Skill-to-Job Readiness & Portfolio Generator (SDG 8).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
